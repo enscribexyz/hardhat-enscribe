@@ -13,12 +13,16 @@ import {
   isAddressEmpty,
   isAddressValid,
   parseNormalizedName,
+  logMetric,
 } from "../utils.js";
 import { WalletClient } from "viem";
 import { getContractAddresses } from "../config/contracts.js";
+import { v4 as uuid } from 'uuid';
 
 // Global contracts object - will be initialized based on chain
 let contracts: Record<string, string> = {};
+const opType = 'hh-enscribe-nameexisting';
+const corelationId = uuid();
 
 interface TaskNameArguments {
   name: string;
@@ -65,7 +69,7 @@ const isOwnable = async (address: string, walletClient: WalletClient) => {
       args: [],
     })) as `0x${string}`;
 
-    console.log("contract ownable");
+    console.log("contract implements Ownable");
   } catch (err) {
     return false;
   }
@@ -75,30 +79,59 @@ const isOwnable = async (address: string, walletClient: WalletClient) => {
 
 const isReverseClaimable = async (address: string, walletClient: WalletClient) => {
   if (isAddressEmpty(address) || !isAddressValid(address)) {
-    return
+    return;
   }
 
   try {
-    const addrLabel = address.slice(2).toLowerCase()
-    const reversedNode = namehash(addrLabel + '.' + 'addr.reverse')
+    const addrLabel = address.slice(2).toLowerCase();
+    const reversedNode = namehash(addrLabel + '.' + 'addr.reverse');
     const resolvedAddr = (await readContract(walletClient, {
       address: contracts.ENS_REGISTRY as `0x${string}`,
       abi: ensRegistryABI,
       functionName: 'owner',
       args: [reversedNode],
-    })) as `0x${string}`
-    console.log('resolvedaddr is ' + resolvedAddr)
+    })) as `0x${string}`;
+    console.log('resolvedaddr is ' + resolvedAddr);
 
     if (resolvedAddr.toLowerCase() === walletClient.account?.address.toLowerCase()) {
-      console.log('contract implements reverseclaimable')
-      return true
+      console.log('contract implements Reverseclaimable');
+      return true;
     } else {
-      console.log('contract does not implement reverseclaimable')
-      return false
+      console.log('contract does not implement reverseclaimable');
+      return false;
     }
   } catch (err) {
-    console.log('there was an error checking if the contract was reverse claimer')
+    console.log('there was an error checking if the contract was reverse claimer');
+    return false;
+  }
+}
+
+const isContractOwner = async (address: string, walletClient: WalletClient) => {
+  if ( isAddressEmpty(address) || !isAddressValid(address) || !walletClient) {
     return false
+  }
+
+  try {
+    const ownerAddress = (await readContract(walletClient, {
+      address: address as `0x${string}`,
+      abi: ownableContractABI,
+      functionName: 'owner',
+      args: [],
+    })) as `0x${string}`;
+
+    return ownerAddress.toLowerCase() == walletClient.account?.address.toLowerCase();
+  } catch (err) {
+    // console.log('err ' + err);
+    const addrLabel = address.slice(2).toLowerCase();
+    const reversedNode = namehash(addrLabel + '.' + 'addr.reverse');
+    const resolvedAddr = (await readContract(walletClient, {
+      address: contracts.ENS_REGISTRY as `0x${string}`,
+      abi: ensRegistryABI,
+      functionName: 'owner',
+      args: [reversedNode],
+    })) as string;
+
+    return resolvedAddr.toLowerCase() == walletClient.account?.address.toLowerCase();
   }
 }
 
@@ -119,10 +152,18 @@ const setPrimaryName = async (
     args: [fullNameNode],
   })) as boolean;
 
+  let contractType = 'Unknown';
+  if(await isReverseClaimable(contractAddress, walletClient)) {
+    contractType = 'ReverseClaimer';
+  } 
+  if(await isOwnable(contractAddress, walletClient)) {
+     contractType = 'Ownable';
+  } 
+
   // create subname
   if (!nameExists) {
-    process.stdout.write(`creating subname ... `)
-    let txn
+    process.stdout.write(`creating subname ... `);
+    let txn;
     const isWrapped = await readContract(walletClient, {
       address: contracts.NAME_WRAPPER as `0x${string}`,
       abi: nameWrapperABI,
@@ -131,9 +172,9 @@ const setPrimaryName = async (
     });
 
     if (isWrapped) {
-      console.log(
-        "create subname::writeContract calling setSubnodeRecord on NAME_WRAPPER",
-      );
+      // console.log(
+      //   "create subname::writeContract calling setSubnodeRecord on NAME_WRAPPER",
+      // );
       txn = await writeContract(walletClient, {
         address: contracts.NAME_WRAPPER as `0x${string}`,
         abi: nameWrapperABI,
@@ -151,22 +192,22 @@ const setPrimaryName = async (
         chain: walletClient.chain,
       });
 
-      // await logMetric(
-      //     corelationId,
-      //     Date.now(),
-      //     chainId,
-      //     existingContractAddress,
-      //     walletAddress,
-      //     name,
-      //     'subname::setSubnodeRecord',
-      //     txn,
-      //     isOwnable ? 'Ownable' : 'ReverseClaimer',
-      //     opType,
-      // )
-    } else {
-      console.log(
-        "create subname::writeContract calling setSubnodeRecord on ENS_REGISTRY",
+      await logMetric(
+          corelationId,
+          Date.now(),
+          walletClient.chain?.id!,
+          contractAddress,
+          walletClient.account?.address!,
+          normalizedName,
+          'subname::setSubnodeRecord',
+          txn,
+          contractType,
+          opType,
       );
+    } else {
+      // console.log(
+      //   "create subname::writeContract calling setSubnodeRecord on ENS_REGISTRY",
+      // );
       txn = await writeContract(walletClient, {
         address: contracts.ENS_REGISTRY as `0x${string}`,
         abi: ensRegistryABI,
@@ -182,18 +223,18 @@ const setPrimaryName = async (
         chain: walletClient.chain,
       });
 
-      // await logMetric(
-      //   corelationId,
-      //   Date.now(),
-      //   chainId,
-      //   existingContractAddress,
-      //   walletAddress,
-      //   name,
-      //   'subname::setSubnodeRecord',
-      //   txn,
-      //   isOwnable ? 'Ownable' : 'ReverseClaimer',
-      //   opType,
-      // )
+      await logMetric(
+        corelationId,
+        Date.now(),
+        walletClient.chain?.id!,
+        contractAddress,
+        walletClient.account?.address!,
+        normalizedName,
+        'subname::setSubnodeRecord',
+        txn,
+        contractType,
+        opType,
+      );
     }
     process.stdout.write(`done with txn: ${txn}\n`);
   } else {
@@ -201,7 +242,7 @@ const setPrimaryName = async (
   }
 
   // set fwd res
-  process.stdout.write(`setting forward resolution ... `)
+  process.stdout.write(`setting forward resolution ... `);
   const currentAddr = (await readContract(walletClient, {
     address: contracts.PUBLIC_RESOLVER as `0x${string}`,
     abi: publicResolverABI,
@@ -210,7 +251,7 @@ const setPrimaryName = async (
   })) as `0x${string}`;
 
   if (currentAddr.toLowerCase() !== contractAddress.toLowerCase()) {
-    console.log("set fwdres::writeContract calling setAddr on PUBLIC_RESOLVER");
+    // console.log("set fwdres::writeContract calling setAddr on PUBLIC_RESOLVER");
     let txn = await writeContract(walletClient, {
       address: contracts.PUBLIC_RESOLVER as `0x${string}`,
       abi: publicResolverABI,
@@ -220,69 +261,92 @@ const setPrimaryName = async (
       chain: walletClient.chain,
     });
 
-    // await logMetric(
-    //   corelationId,
-    //   Date.now(),
-    //   chainId,
-    //   existingContractAddress,
-    //   walletAddress,
-    //   name,
-    //   'fwdres::setAddr',
-    //   txn,
-    //   isOwnable ? 'Ownable' : 'ReverseClaimer',
-    //   opType,
-    // )
+    await logMetric(
+      corelationId,
+      Date.now(),
+      walletClient.chain?.id!,
+      contractAddress,
+      walletClient.account?.address!,
+      normalizedName,
+      'fwdres::setAddr',
+      txn,
+      contractType,
+      opType,
+    );
     process.stdout.write(`done with txn: ${txn}\n`);
   } else {
     process.stdout.write("forward resolution already set.\n");
   }
 
   // set rev res
-  process.stdout.write(`setting reverse resolution ... `)
-  let txn
-  if(await isReverseClaimable(contractAddress, walletClient)){
-    const addrLabel = contractAddress.slice(2).toLowerCase()
-    const reversedNode = namehash(addrLabel + '.' + 'addr.reverse')
-     txn = await writeContract(walletClient, {
-       address: contracts.PUBLIC_RESOLVER as `0x${string}`,
-       abi: publicResolverABI,
-      functionName: 'setName',
-      args: [
-        reversedNode,
-        normalizedName,
-      ],
-      account: walletClient.account!,
-      chain: walletClient.chain
-    })
-  } else if(await isOwnable(contractAddress, walletClient)) {
-    txn = await writeContract(walletClient, {
-      address: contracts.REVERSE_REGISTRAR as `0x${string}`,
-      abi: reverseRegistrarABI,
-      functionName: "setNameForAddr",
-      args: [
-        contractAddress,
-        walletClient.account?.address,
-        contracts.PUBLIC_RESOLVER,
-        normalizedName,
-      ],
-      account: walletClient.account!,
-      chain: walletClient.chain,
-    });
-  }
+  process.stdout.write(`setting reverse resolution ... `);
+  if(await isContractOwner(contractAddress, walletClient)) {
+    let txn;
+    if (contractType === 'ReverseClaimer') {
+      const addrLabel = contractAddress.slice(2).toLowerCase();
+      const reversedNode = namehash(addrLabel + '.' + 'addr.reverse');
+      // console.log('reversedNode is ' + reversedNode + '\n');
+      // console.log('pub res is ' + contracts.PUBLIC_RESOLVER + '\n');
+      txn = await writeContract(walletClient, {
+        address: contracts.PUBLIC_RESOLVER as `0x${string}`,
+        abi: publicResolverABI,
+        functionName: 'setName',
+        args: [
+          reversedNode,
+          normalizedName,
+        ],
+        account: walletClient.account!,
+        chain: walletClient.chain,
+      });
 
-  // await logMetric(
-  //   corelationId,
-  //   Date.now(),
-  //   chainId,
-  //   existingContractAddress,
-  //   walletAddress,
-  //   name,
-  //   'revres::setNameForAddr',
-  //   txn,
-  //   'Ownable',
-  //   opType,
-  // )
-  process.stdout.write(`done with txn: ${txn}\n`);
+      await logMetric(
+        corelationId,
+        Date.now(),
+        walletClient.chain?.id!,
+        contractAddress,
+        walletClient.account?.address!,
+        normalizedName,
+        'revres::setName',
+        txn,
+        'ReverseClaimer',
+        opType,
+       );
+    } else if (contractType === 'Ownable') {
+      txn = await writeContract(walletClient, {
+        address: contracts.REVERSE_REGISTRAR as `0x${string}`,
+        abi: reverseRegistrarABI,
+        functionName: "setNameForAddr",
+        args: [
+          contractAddress,
+          walletClient.account?.address,
+          contracts.PUBLIC_RESOLVER,
+          normalizedName,
+        ],
+        account: walletClient.account!,
+        chain: walletClient.chain,
+      });
+
+      await logMetric(
+        corelationId,
+        Date.now(),
+        walletClient.chain?.id!,
+        contractAddress,
+        walletClient.account?.address!,
+        normalizedName,
+        'revres::setNameForAddr',
+        txn,
+         'Ownable',
+         opType,
+       );
+    } else {
+      console.log(`Only Ownable, ERC173 and ReverseClaimer contracts can be named.`);
+      return;
+    }
+
+    process.stdout.write(`done with txn: ${txn}\n`);
+  } else {
+    console.log(`You are not the owner of this contract. Skipping reverse resolution.\n`);
+  }
   console.log(
     `✨ Contract named: https://app.enscribe.xyz/explore/${walletClient.chain?.id}/${normalizedName}`,
   );
