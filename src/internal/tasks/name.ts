@@ -2,7 +2,7 @@ import type { NewTaskActionFunction } from "hardhat/types/tasks";
 import type { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import "@nomicfoundation/hardhat-viem";
 import { namehash, normalize } from "viem/ens";
-import { readContract, writeContract } from "viem/actions";
+import { readContract, writeContract, waitForTransactionReceipt } from "viem/actions";
 import { keccak256, toBytes } from "viem";
 import ensRegistryABI from "../abi/ENSRegistry.js";
 import ownableContractABI from "../abi/Ownable.js";
@@ -15,7 +15,7 @@ import {
   parseNormalizedName,
   logMetric,
 } from "../utils.js";
-import { WalletClient } from "viem";
+import { WalletClient, PublicClient } from "viem";
 import { getContractAddresses } from "../config/contracts.js";
 import { v4 as uuid } from 'uuid';
 
@@ -48,12 +48,13 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
   const { viem } = await hre.network.connect(networkName);
   // console.log(hre.userConfig.networks);
   const [senderClient, recvrClient] = await viem.getWalletClients();
+  const publicClient = await viem.getPublicClient();
   // console.log(senderClient.account);
 
   const nameNormalized = normalize(args.name);
   console.log(`normalized name is ${nameNormalized}`);
 
-  await setPrimaryName(nameNormalized, args.contract, senderClient);
+  await setPrimaryName(nameNormalized, args.contract, senderClient, publicClient);
 };
 
 const isOwnable = async (address: string, walletClient: WalletClient) => {
@@ -139,6 +140,7 @@ const setPrimaryName = async (
   normalizedName: string,
   contractAddress: string,
   walletClient: WalletClient,
+  publicClient: PublicClient,
 ) => {
   const { label, parent } = parseNormalizedName(normalizedName);
   const parentNode = namehash(parent);
@@ -191,6 +193,9 @@ const setPrimaryName = async (
         account: walletClient.account!,
         chain: walletClient.chain,
       });
+      console.log(`create subname txn: ${txn}`);
+      await waitForTransactionReceipt(walletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
 
       await logMetric(
           corelationId,
@@ -223,6 +228,10 @@ const setPrimaryName = async (
         chain: walletClient.chain,
       });
 
+      // console.log(`create subname txn: ${txn}`);
+      await waitForTransactionReceipt(walletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
+
       await logMetric(
         corelationId,
         Date.now(),
@@ -236,10 +245,10 @@ const setPrimaryName = async (
         opType,
       );
     }
-    process.stdout.write(`done with txn: ${txn}\n`);
   } else {
     process.stdout.write(`${normalizedName} already exists. skipping subname creation.\n`);
   }
+   // Wait for subname creation to be confirmed before proceeding
 
   // set fwd res
   process.stdout.write(`setting forward resolution ... `);
@@ -261,6 +270,8 @@ const setPrimaryName = async (
       chain: walletClient.chain,
     });
 
+    await waitForTransactionReceipt(walletClient, { hash: txn });
+    process.stdout.write(`done with txn: ${txn}\n`);
     await logMetric(
       corelationId,
       Date.now(),
@@ -273,7 +284,6 @@ const setPrimaryName = async (
       contractType,
       opType,
     );
-    process.stdout.write(`done with txn: ${txn}\n`);
   } else {
     process.stdout.write("forward resolution already set.\n");
   }
@@ -299,6 +309,8 @@ const setPrimaryName = async (
         chain: walletClient.chain,
       });
 
+      await waitForTransactionReceipt(walletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
       await logMetric(
         corelationId,
         Date.now(),
@@ -326,6 +338,8 @@ const setPrimaryName = async (
         chain: walletClient.chain,
       });
 
+      await waitForTransactionReceipt(walletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
       await logMetric(
         corelationId,
         Date.now(),
@@ -342,8 +356,6 @@ const setPrimaryName = async (
       console.log(`Only Ownable, ERC173 and ReverseClaimer contracts can be named.`);
       return;
     }
-
-    process.stdout.write(`done with txn: ${txn}\n`);
   } else {
     console.log(`You are not the owner of this contract. Skipping reverse resolution.\n`);
   }
