@@ -22,6 +22,6 @@
   },
   "type": "module",
   "dependencies": {
-    "hardhat-enscribe": "link:/Users/abhi/code/hardhat-enscribe"
+    "@enscribe/hardhat-enscribe": "0.1.0"
   }
 }

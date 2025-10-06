@@ -22,7 +22,7 @@ hardhat-enscribe allows developers to automatically assign ENS names to their sm
 ## Installation
 
 ```bash
-npm install hardhat-enscribe
+npm install @enscribe/hardhat-enscribe
 ```
 
 ## Configuration
@@ -31,7 +31,7 @@ Add the plugin to your `hardhat.config.ts`:
 
 ```typescript
 import type { HardhatUserConfig } from "hardhat/config";
-import hardhatEnscribePlugin from "hardhat-enscribe";
+import hardhatEnscribePlugin from "@enscribe/hardhat-enscribe";
 import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 
 const config: HardhatUserConfig = {

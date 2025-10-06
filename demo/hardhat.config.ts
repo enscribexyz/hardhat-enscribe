@@ -1,5 +1,5 @@
 import type { HardhatUserConfig } from "hardhat/config";
-import hardhatEnscribePlugin from "hardhat-enscribe";
+import hardhatEnscribePlugin from "@enscribe/hardhat-enscribe";
 
 import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 import { configVariable } from "hardhat/config";

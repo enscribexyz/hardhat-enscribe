@@ -191,7 +191,7 @@ const setPrimaryName = async (
         account: walletClient.account!,
         chain: walletClient.chain,
       });
-      console.log(`create subname txn: ${txn}`);
+      // console.log(`create subname txn: ${txn}`);
       await waitForTransactionReceipt(walletClient, { hash: txn });
       process.stdout.write(`done with txn: ${txn}\n`);
 
