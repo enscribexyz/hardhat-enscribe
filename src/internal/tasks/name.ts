@@ -48,13 +48,12 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
   const { viem } = await hre.network.connect(networkName);
   // console.log(hre.userConfig.networks);
   const [senderClient, recvrClient] = await viem.getWalletClients();
-  const publicClient = await viem.getPublicClient();
   // console.log(senderClient.account);
 
   const nameNormalized = normalize(args.name);
   console.log(`normalized name is ${nameNormalized}`);
 
-  await setPrimaryName(nameNormalized, args.contract, senderClient, publicClient);
+  await setPrimaryName(nameNormalized, args.contract, senderClient);
 };
 
 const isOwnable = async (address: string, walletClient: WalletClient) => {
@@ -140,7 +139,6 @@ const setPrimaryName = async (
   normalizedName: string,
   contractAddress: string,
   walletClient: WalletClient,
-  publicClient: PublicClient,
 ) => {
   const { label, parent } = parseNormalizedName(normalizedName);
   const parentNode = namehash(parent);
