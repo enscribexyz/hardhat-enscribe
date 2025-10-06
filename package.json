@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "A Hardhat v3 plugin to name smart contracts",
   "license": "MIT",
+  "repository": "https://github.com/enscribexyz/hardhat-enscribe",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
