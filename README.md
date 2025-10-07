@@ -9,7 +9,7 @@ hardhat-enscribe allows developers to automatically assign ENS names to their sm
 - **Subname Creation**: Creates ENS subnames for your contracts
 - **Forward Resolution**: Maps ENS names to contract addresses  
 - **Reverse Resolution**: Maps contract addresses back to ENS names
-- **Multi-chain Support**: Works across multiple networks including Ethereum, Sepolia, Linea, and more
+- **Multi-chain Support**: Works across multiple networks including Ethereum, Sepolia
 
 ## Features
 
@@ -57,11 +57,6 @@ npx hardhat enscribe name <ENS_NAME> --contract <CONTRACT_ADDRESS>
 npx hardhat enscribe name mycontract.mydomain.eth --contract 0x1234...5678
 ```
 
-#### Name a contract on Linea
-```bash
-npx hardhat enscribe name mycontract.mydomain.eth --contract 0x1234...5678 --chain linea
-```
-
 ### Command Options
 
 - `name` (required): The ENS name to assign (e.g., `mycontract.mydomain.eth`)
@@ -74,8 +69,6 @@ The plugin supports the following networks:
 
 - **Ethereum Mainnet** (`mainnet`)
 - **Sepolia Testnet** (`sepolia`) - Default
-- **Linea Mainnet** (`linea`)
-- **Linea Sepolia** (`linea-sepolia`)
 
 ## Contract Requirements
 
@@ -142,13 +135,7 @@ networks: {
     chainType: "l1", 
     url: configVariable("SEPOLIA_RPC_URL"),
     accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
-  },
-  linea: {
-    type: "http",
-    chainType: "l2",
-    url: configVariable("LINEA_RPC_URL"), 
-    accounts: [configVariable("LINEA_PRIVATE_KEY")],
-  },
+  }
 }
 ```
 
