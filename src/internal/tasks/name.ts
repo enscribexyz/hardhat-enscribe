@@ -17,12 +17,12 @@ import {
 } from "../utils.js";
 import { WalletClient, PublicClient } from "viem";
 import { getContractAddresses } from "../config/contracts.js";
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from "crypto";
 
 // Global contracts object - will be initialized based on chain
 let contracts: Record<string, string> = {};
 const opType = 'hh-enscribe-nameexisting';
-const corelationId = uuid();
+const corelationId = randomUUID();
 
 interface TaskNameArguments {
   name: string;
