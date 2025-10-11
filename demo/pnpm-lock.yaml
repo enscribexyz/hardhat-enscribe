@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@enscribe/hardhat-enscribe':
-        specifier: 0.1.0
-        version: 0.1.0(hardhat@3.0.6)(typescript@5.9.3)(zod@3.25.76)
+        specifier: 0.1.3
+        version: 0.1.3(hardhat@3.0.6)(typescript@5.9.3)(zod@3.25.76)
     devDependencies:
       '@nomicfoundation/hardhat-ignition':
         specifier: ^3.0.3
@@ -61,8 +61,8 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@enscribe/hardhat-enscribe@0.1.0':
-    resolution: {integrity: sha512-oMii2JtGn8asot+iBHEzjjFBQ299aDYWiTFQjEzQQA/Cn/J4LMr3WifcZeYSEJzP9vKKn88bN8YFZ5cibU0Qwg==}
+  '@enscribe/hardhat-enscribe@0.1.3':
+    resolution: {integrity: sha512-ShJFvb5opg8fzknXTiGHAJA2X+Y4+J4UuGm/TgZH5YcgcdufbeTu5wJCkzxHJXBOhiJ643lO2JhPhTY+3RV4FQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       hardhat: ^3.0.0
@@ -867,10 +867,6 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
-
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
 
@@ -939,10 +935,9 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@enscribe/hardhat-enscribe@0.1.0(hardhat@3.0.6)(typescript@5.9.3)(zod@3.25.76)':
+  '@enscribe/hardhat-enscribe@0.1.3(hardhat@3.0.6)(typescript@5.9.3)(zod@3.25.76)':
     dependencies:
       hardhat: 3.0.6
-      uuid: 11.1.0
       viem: 2.37.13(typescript@5.9.3)(zod@3.25.76)
     transitivePeerDependencies:
       - bufferutil
@@ -1823,8 +1818,6 @@ snapshots:
   undici@6.22.0: {}
 
   util-deprecate@1.0.2: {}
-
-  uuid@11.1.0: {}
 
   v8-compile-cache-lib@3.0.1: {}
 

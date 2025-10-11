@@ -17,10 +17,12 @@ import {
 } from "../utils.js";
 import { WalletClient, PublicClient } from "viem";
 import { getContractAddresses } from "../config/contracts.js";
+import { NetworkConnection } from "hardhat/types/network";
 import { randomUUID } from "crypto";
 
 // Global contracts object - will be initialized based on chain
-let contracts: Record<string, string> = {};
+let l1Contracts: Record<string, string | number> = {};
+let l2Contracts: Record<string, string | number> | null = null;
 const opType = 'hh-enscribe-nameexisting';
 const corelationId = randomUUID();
 
@@ -39,21 +41,43 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
     return;
   }
 
+  let l1NetworkName = "sepolia";
+  let l2NetworkName;
+  if (args.chain != null) {
+    if (args.chain.toLowerCase() === "linea-sepolia" || args.chain.toLowerCase() === "optimism-sepolia" || args.chain.toLowerCase() === "arbitrum-sepolia" || args.chain.toLowerCase() === "scroll-sepolia" || args.chain.toLowerCase() === "base-sepolia") {
+      l1NetworkName = "sepolia";
+      l2NetworkName = args.chain.toLowerCase();
+    } else if(args.chain.toLowerCase() === "linea" || args.chain.toLowerCase() === "optimism" || args.chain.toLowerCase() === "arbitrum" || args.chain.toLowerCase() === "scroll" || args.chain.toLowerCase() === "base"){
+      l1NetworkName = "mainnet";
+      l2NetworkName = args.chain.toLowerCase();
+    } else { // no l2 chain
+      l1NetworkName = args.chain.toLowerCase();
+    }
+  }
+
   // Determine network from chain parameter or default to sepolia
-  const networkName = args.chain || "sepolia";
+  // const networkName = args.chain || "sepolia";
   
   // Initialize global contracts object based on network
-  contracts = getContractAddresses(networkName as any);
-
-  const { viem } = await hre.network.connect(networkName);
+  l1Contracts = getContractAddresses(l1NetworkName as any);
+  const { viem } = await hre.network.connect(l1NetworkName);
   // console.log(hre.userConfig.networks);
   const [senderClient, recvrClient] = await viem.getWalletClients();
   // console.log(senderClient.account);
 
+  let l2SenderClient: WalletClient | null = null;
+  let l2RecvrClient: WalletClient | null = null;
+  let l2Viem: any | null = null;
+  if (l2NetworkName) {
+    l2Contracts = getContractAddresses(l2NetworkName as any);
+    l2Viem = await hre.network.connect(l2NetworkName);
+    // console.log(hre.userConfig.networks);
+    [l2SenderClient, l2RecvrClient] = await l2Viem.getWalletClients();
+  }
   const nameNormalized = normalize(args.name);
   console.log(`normalized name is ${nameNormalized}`);
 
-  await setPrimaryName(nameNormalized, args.contract, senderClient);
+  await setPrimaryName(nameNormalized, args.contract, senderClient, l2SenderClient);
 };
 
 const isOwnable = async (address: string, walletClient: WalletClient) => {
@@ -86,7 +110,7 @@ const isReverseClaimable = async (address: string, walletClient: WalletClient) =
     const addrLabel = address.slice(2).toLowerCase();
     const reversedNode = namehash(addrLabel + '.' + 'addr.reverse');
     const resolvedAddr = (await readContract(walletClient, {
-      address: contracts.ENS_REGISTRY as `0x${string}`,
+      address: l1Contracts.ENS_REGISTRY as `0x${string}`,
       abi: ensRegistryABI,
       functionName: 'owner',
       args: [reversedNode],
@@ -125,7 +149,7 @@ const isContractOwner = async (address: string, walletClient: WalletClient) => {
     const addrLabel = address.slice(2).toLowerCase();
     const reversedNode = namehash(addrLabel + '.' + 'addr.reverse');
     const resolvedAddr = (await readContract(walletClient, {
-      address: contracts.ENS_REGISTRY as `0x${string}`,
+      address: l1Contracts.ENS_REGISTRY as `0x${string}`,
       abi: ensRegistryABI,
       functionName: 'owner',
       args: [reversedNode],
@@ -139,6 +163,7 @@ const setPrimaryName = async (
   normalizedName: string,
   contractAddress: string,
   walletClient: WalletClient,
+  l2WalletClient: WalletClient | null,
 ) => {
   const { label, parent } = parseNormalizedName(normalizedName);
   const parentNode = namehash(parent);
@@ -146,7 +171,7 @@ const setPrimaryName = async (
 
   const fullNameNode = namehash(normalizedName);
   const nameExists = (await readContract(walletClient, {
-    address: contracts.ENS_REGISTRY as `0x${string}`,
+    address: l1Contracts.ENS_REGISTRY as `0x${string}`,
     abi: ensRegistryABI,
     functionName: "recordExists",
     args: [fullNameNode],
@@ -165,7 +190,7 @@ const setPrimaryName = async (
     process.stdout.write(`creating subname ... `);
     let txn;
     const isWrapped = await readContract(walletClient, {
-      address: contracts.NAME_WRAPPER as `0x${string}`,
+      address: l1Contracts.NAME_WRAPPER as `0x${string}`,
       abi: nameWrapperABI,
       functionName: "isWrapped",
       args: [parentNode],
@@ -176,14 +201,14 @@ const setPrimaryName = async (
       //   "create subname::writeContract calling setSubnodeRecord on NAME_WRAPPER",
       // );
       txn = await writeContract(walletClient, {
-        address: contracts.NAME_WRAPPER as `0x${string}`,
+        address: l1Contracts.NAME_WRAPPER as `0x${string}`,
         abi: nameWrapperABI,
         functionName: "setSubnodeRecord",
         args: [
           parentNode,
           label,
           walletClient.account?.address,
-          contracts.PUBLIC_RESOLVER,
+          l1Contracts.PUBLIC_RESOLVER,
           0,
           0,
           0,
@@ -212,14 +237,14 @@ const setPrimaryName = async (
       //   "create subname::writeContract calling setSubnodeRecord on ENS_REGISTRY",
       // );
       txn = await writeContract(walletClient, {
-        address: contracts.ENS_REGISTRY as `0x${string}`,
+        address: l1Contracts.ENS_REGISTRY as `0x${string}`,
         abi: ensRegistryABI,
         functionName: "setSubnodeRecord",
         args: [
           parentNode,
           labelHash,
           walletClient.account?.address,
-          contracts.PUBLIC_RESOLVER,
+          l1Contracts.PUBLIC_RESOLVER,
           0,
         ],
         account: walletClient.account!,
@@ -246,12 +271,11 @@ const setPrimaryName = async (
   } else {
     process.stdout.write(`${normalizedName} already exists. skipping subname creation.\n`);
   }
-   // Wait for subname creation to be confirmed before proceeding
 
   // set fwd res
   process.stdout.write(`setting forward resolution ... `);
   const currentAddr = (await readContract(walletClient, {
-    address: contracts.PUBLIC_RESOLVER as `0x${string}`,
+    address: l1Contracts.PUBLIC_RESOLVER as `0x${string}`,
     abi: publicResolverABI,
     functionName: "addr",
     args: [fullNameNode],
@@ -260,7 +284,7 @@ const setPrimaryName = async (
   if (currentAddr.toLowerCase() !== contractAddress.toLowerCase()) {
     // console.log("set fwdres::writeContract calling setAddr on PUBLIC_RESOLVER");
     let txn = await writeContract(walletClient, {
-      address: contracts.PUBLIC_RESOLVER as `0x${string}`,
+      address: l1Contracts.PUBLIC_RESOLVER as `0x${string}`,
       abi: publicResolverABI,
       functionName: "setAddr",
       args: [fullNameNode, contractAddress],
@@ -296,7 +320,7 @@ const setPrimaryName = async (
       // console.log('reversedNode is ' + reversedNode + '\n');
       // console.log('pub res is ' + contracts.PUBLIC_RESOLVER + '\n');
       txn = await writeContract(walletClient, {
-        address: contracts.PUBLIC_RESOLVER as `0x${string}`,
+        address: l1Contracts.PUBLIC_RESOLVER as `0x${string}`,
         abi: publicResolverABI,
         functionName: 'setName',
         args: [
@@ -323,13 +347,13 @@ const setPrimaryName = async (
        );
     } else if (contractType === 'Ownable') {
       txn = await writeContract(walletClient, {
-        address: contracts.REVERSE_REGISTRAR as `0x${string}`,
+        address: l1Contracts.REVERSE_REGISTRAR as `0x${string}`,
         abi: reverseRegistrarABI,
         functionName: "setNameForAddr",
         args: [
           contractAddress,
           walletClient.account?.address,
-          contracts.PUBLIC_RESOLVER,
+          l1Contracts.PUBLIC_RESOLVER,
           normalizedName,
         ],
         account: walletClient.account!,
@@ -355,8 +379,106 @@ const setPrimaryName = async (
       return;
     }
   } else {
-    console.log(`You are not the owner of this contract. Skipping reverse resolution.\n`);
+    console.log(`You are not the owner of this contract. Skipping reverse resolution.`);
   }
+
+  // check if name needs to be set on L2
+  if (l2WalletClient && l2Contracts) {
+    const currentAddr = (await readContract(walletClient, {
+      address: l1Contracts.PUBLIC_RESOLVER as `0x${string}`,
+      abi: publicResolverABI,
+      functionName: 'addr',
+      args: [fullNameNode, Number(l2Contracts.COIN_TYPE)],
+    })) as `0x${string}`;
+
+    // set forward resolution on L2
+    if (currentAddr.toLowerCase() !== contractAddress.toLowerCase()) {
+      process.stdout.write(`setting forward resolution on L2 ... `);
+      let txn = await writeContract(walletClient, {
+        address: l1Contracts.PUBLIC_RESOLVER as `0x${string}`,
+        abi: publicResolverABI,
+        functionName: 'setAddr',
+        args: [fullNameNode, Number(l2Contracts.COIN_TYPE), contractAddress],
+        account: walletClient.account!,
+        chain: walletClient.chain,
+      });
+
+      await waitForTransactionReceipt(walletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
+      await logMetric(
+        corelationId,
+        Date.now(),
+        walletClient.chain?.id!,
+        contractAddress,
+        walletClient.account?.address!,
+        normalizedName,
+        'fwdres::setAddr',
+        txn,
+        contractType,
+        opType,
+      );
+    } else {
+      console.log("forward resolution already set on L2.");
+    }
+
+    // set reverse resolution on L2
+    try {
+      const ownerAddress = await readContract(l2WalletClient, {
+        address: contractAddress as `0x${string}`,
+        abi: ownableContractABI,
+        functionName: 'owner',
+        args: [],
+      }) as `0x${string}`;
+
+      process.stdout.write(`setting reverse resolution on L2 ... `);
+      let txn = await writeContract(l2WalletClient, {
+        address: l2Contracts.L2_REVERSE_REGISTRAR as `0x${string}`,
+        abi: [
+          {
+            inputs: [
+              {
+                internalType: 'address',
+                name: 'addr',
+                type: 'address'
+              },
+              {
+                internalType: 'string',
+                name: 'name',
+                type: 'string'
+              }
+            ],
+            name: 'setNameForAddr',
+            outputs: [],
+            stateMutability: 'nonpayable',
+            type: 'function'
+          }
+        ],
+        functionName: "setNameForAddr",
+        args: [contractAddress as `0x${string}`, normalizedName],
+        account: l2WalletClient.account!,
+        chain: l2WalletClient.chain,
+      });
+
+      await waitForTransactionReceipt(l2WalletClient, { hash: txn });
+      process.stdout.write(`done with txn: ${txn}\n`);
+      await logMetric(
+        corelationId,
+        Date.now(),
+        l2WalletClient.chain?.id!,
+        contractAddress,
+        l2WalletClient.account?.address!,
+        normalizedName,
+        'revres::setNameForAddr',
+        txn,
+        contractType,
+        opType,
+      );
+    } catch (err) {
+      console.log("contract is not ownable on L2. skipping reverse resolution.");
+    }
+
+  }
+
   console.log(
     `✨ Contract named: https://app.enscribe.xyz/explore/${walletClient.chain?.id}/${normalizedName}`,
   );

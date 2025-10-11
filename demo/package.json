@@ -22,6 +22,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@enscribe/hardhat-enscribe": "0.1.0"
+    "@enscribe/hardhat-enscribe": "0.1.3"
   }
 }

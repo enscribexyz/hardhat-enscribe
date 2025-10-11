@@ -7,6 +7,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
     REVERSE_REGISTRAR: "0xa58E81fe9b61B5c3fE2AFD33CF304c454AbFc7Cb",
     L2_REVERSE_REGISTRAR: "",
+    COIN_TYPE: 60,
   },
   // Sepolia testnet addresses
   sepolia: {
@@ -15,6 +16,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "0x0635513f179D50A207757E05759CbD106d7dFcE8",
     REVERSE_REGISTRAR: "0xA0a1AbcDAe1a2a4A2EF8e9113Ff0e02DD81DC0C6",
     L2_REVERSE_REGISTRAR: "",
+    COIN_TYPE: 60,
   },
   // Linea mainnet addresses
   linea: {
@@ -23,6 +25,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "0xA53cca02F98D590819141Aa85C891e2Af713C223",
     REVERSE_REGISTRAR: "0x08D3fF6E65f680844fd2465393ff6f0d742b67D5",
     L2_REVERSE_REGISTRAR: "0x0000000000D8e504002cC26E3Ec46D81971C1664",
+    COIN_TYPE: 2147542792,
   },
   // Linea Sepolia testnet addresses
   "linea-sepolia": {
@@ -31,6 +34,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "0xF127De9E039a789806fEd4C6b1C0f3aFfeA9425e",
     REVERSE_REGISTRAR: "0x4aAA964D8EB65508ca3DA3b0A3C060c16059E613",
     L2_REVERSE_REGISTRAR: "0x00000BeEF055f7934784D6d81b6BC86665630dbA",
+    COIN_TYPE: 2147542789,
   },
   // Base mainnet addresses
   base: {
@@ -39,6 +43,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "0x79EA96012eEa67A83431F1701B3dFf7e37F9E282",
     L2_REVERSE_REGISTRAR: "0x0000000000D8e504002cC26E3Ec46D81971C1664",
+    COIN_TYPE: 2147492101,
   },
   // Base Sepolia testnet addresses
   "base-sepolia": {
@@ -47,6 +52,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "0xa0A8401ECF248a9375a0a71C4dedc263dA18dCd7",
     L2_REVERSE_REGISTRAR: "0x00000BeEF055f7934784D6d81b6BC86665630dbA",
+    COIN_TYPE: 2147568180,
   },
   // Optimism mainnet addresses
   optimism: {
@@ -55,6 +61,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x0000000000D8e504002cC26E3Ec46D81971C1664",
+    COIN_TYPE: 2147483658,
   },
   // Optimism Sepolia testnet addresses
   "optimism-sepolia": {
@@ -63,6 +70,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x00000BeEF055f7934784D6d81b6BC86665630dbA",
+    COIN_TYPE: 2158639068,
   },
   // Arbitrum mainnet addresses
   arbitrum: {
@@ -71,6 +79,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x0000000000D8e504002cC26E3Ec46D81971C1664",
+    COIN_TYPE: 2147525809,
   },
   // Arbitrum Sepolia testnet addresses
   "arbitrum-sepolia": {
@@ -79,6 +88,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x00000BeEF055f7934784D6d81b6BC86665630dbA",
+    COIN_TYPE: 2147905262,
   },
   // Scroll mainnet addresses
   scroll: {
@@ -87,6 +97,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x0000000000D8e504002cC26E3Ec46D81971C1664",
+    COIN_TYPE: 2148018000,
   },
   // Scroll Sepolia testnet addresses
   "scroll-sepolia": {
@@ -95,6 +106,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "0x00000BeEF055f7934784D6d81b6BC86665630dbA",
+    COIN_TYPE: 2148017999,
   },
   // Local development addresses (will be set during deployment)
   localhost: {
@@ -103,6 +115,7 @@ export const ENS_CONTRACTS = {
     NAME_WRAPPER: "",
     REVERSE_REGISTRAR: "",
     L2_REVERSE_REGISTRAR: "",
+    COIN_TYPE: 60,
   },
 } as const;
 
