@@ -1,57 +1,119 @@
-# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
+# ENScribe Plugin Demo
 
-This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
+This demo project shows how to use the `@enscribe/hardhat-enscribe` plugin to name smart contracts with ENS.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Setup
 
-## Project Overview
+1. Install dependencies:
+```bash
+pnpm install
+```
 
-This example project includes:
-
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+2. Configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your RPC URL and private key
+```
 
 ## Usage
 
-### Running Tests
+### Option 1: Deploy and Name in One Script
 
-To run all the tests in the project, execute the following command:
+Deploy a contract and name it using the library directly:
 
-```shell
-npx hardhat test
+```bash
+npx hardhat run scripts/deploy-and-name-simple.ts --network sepolia
 ```
 
-You can also selectively run the Solidity or `node:test` tests:
+This script demonstrates:
+- Deploying a Counter contract
+- Automatically naming it with a generated ENS name
+- Using the `@enscribe/enscribe` library programmatically
+- Perfect example for integrating ENS naming into your deployment scripts
 
-```shell
-npx hardhat test solidity
-npx hardhat test nodejs
+### Option 2: Use the Hardhat Task
+
+Deploy a contract first, then name it using the Hardhat task:
+
+```bash
+# Deploy using Ignition
+npx hardhat ignition deploy ignition/modules/Counter.ts --network sepolia
+
+# Name the deployed contract
+npx hardhat enscribe name mycontract.myname.eth \
+  --contract 0xYourContractAddress \
+  --chain sepolia
 ```
 
-### Make a deployment to Sepolia
+### Option 3: Name an Existing Contract
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+Name any existing contract:
 
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+```bash
+npx hardhat enscribe name mycontract.myname.eth \
+  --contract 0x1234567890123456789012345678901234567890 \
+  --chain sepolia
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+## Examples
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+### Basic Usage (Sepolia)
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+```bash
+npx hardhat enscribe name counter.myname.eth \
+  --contract 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb \
+  --chain sepolia
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+### L2 Usage (Optimism Sepolia)
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+```bash
+npx hardhat enscribe name counter.myname.eth \
+  --contract 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb \
+  --chain optimism-sepolia
 ```
+
+### Programmatic Usage
+
+See `scripts/deploy-and-name.ts` for an example of using the library programmatically:
+
+```typescript
+import { nameContract } from "@enscribe/enscribe";
+
+const result = await nameContract({
+  name: normalizedName,
+  contractAddress: counter.address,
+  walletClient,
+  chainName: "sepolia",
+  enableMetrics: true,
+});
+```
+
+## Supported Networks
+
+- **Mainnet**: mainnet
+- **Testnet**: sepolia
+- **L2 Mainnets**: linea, base, optimism, arbitrum, scroll
+- **L2 Testnets**: linea-sepolia, base-sepolia, optimism-sepolia, arbitrum-sepolia, scroll-sepolia
+
+## Contract Requirements
+
+Your contract must be either:
+1. **Ownable**: Implements the Ownable pattern with an `owner()` function
+2. **ReverseClaimer**: Has claimed its reverse ENS record
+
+## Verification
+
+To verify the demo is using your locally built plugin, see [VERIFICATION.md](./VERIFICATION.md).
+
+## Available Scripts
+
+- **scripts/deploy-counter-and-name.ts** - Deploy Counter using Ignition and name it
+- **scripts/send-op-tx.ts** - Example Optimism transaction
+
+## Learn More
+
+- [ENScribe Documentation](https://docs.enscribe.xyz)
+- [Hardhat Plugin Repository](https://github.com/enscribexyz/hardhat-enscribe)
+- [Core Library Repository](https://github.com/enscribexyz/enscribe-core)
+- [ENScribe App](https://app.enscribe.xyz)

@@ -22,6 +22,8 @@
   },
   "type": "module",
   "dependencies": {
-    "@enscribe/hardhat-enscribe": "0.1.3"
+    "@enscribe/enscribe": "link:/Users/abhi/code/enscribe-core",
+    "@enscribe/hardhat-enscribe": "link:/Users/abhi/code/hardhat-enscribe",
+    "@openzeppelin/contracts": "^5.4.0"
   }
 }

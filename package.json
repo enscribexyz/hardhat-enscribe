@@ -22,7 +22,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@enscribe/core": "link:/Users/abhi/code/enscribe-core",
+    "@enscribe/enscribe": "link:/Users/abhi/code/enscribe-core",
     "viem": "^2.38.0"
   },
   "peerDependencies": {

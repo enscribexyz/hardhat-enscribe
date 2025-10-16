@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@enscribe/core':
+      '@enscribe/enscribe':
         specifier: link:/Users/abhi/code/enscribe-core
         version: link:../enscribe-core
       viem:

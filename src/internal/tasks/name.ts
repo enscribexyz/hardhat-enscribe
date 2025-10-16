@@ -3,7 +3,7 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import "@nomicfoundation/hardhat-viem";
 import { normalize } from "viem/ens";
 import type { WalletClient } from "viem";
-import { nameContract, getContractAddresses } from "@enscribe/core";
+import { nameContract, getContractAddresses, getNetworkInfo } from "@enscribe/enscribe";
 
 interface TaskNameArguments {
   name: string;
@@ -20,34 +20,8 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
     return;
   }
 
-  let l1NetworkName = "sepolia";
-  let l2NetworkName: string | undefined;
-
-  if (args.chain != null) {
-    const chainLower = args.chain.toLowerCase();
-    if (
-      chainLower === "linea-sepolia" ||
-      chainLower === "optimism-sepolia" ||
-      chainLower === "arbitrum-sepolia" ||
-      chainLower === "scroll-sepolia" ||
-      chainLower === "base-sepolia"
-    ) {
-      l1NetworkName = "sepolia";
-      l2NetworkName = chainLower;
-    } else if (
-      chainLower === "linea" ||
-      chainLower === "optimism" ||
-      chainLower === "arbitrum" ||
-      chainLower === "scroll" ||
-      chainLower === "base"
-    ) {
-      l1NetworkName = "mainnet";
-      l2NetworkName = chainLower;
-    } else {
-      // no l2 chain
-      l1NetworkName = chainLower;
-    }
-  }
+  const chainName = args.chain || "sepolia";
+  const { l1NetworkName, l2NetworkName } = getNetworkInfo(chainName);
 
   // Initialize contracts based on network
   const l1Contracts = getContractAddresses(l1NetworkName as any);
@@ -68,27 +42,13 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
 
   // Use the library API
   try {
+    console.log(`\Setting name for contract ${args.contract} on chain ${chainName} ...`);
     const result = await nameContract({
       name: nameNormalized,
       contractAddress: args.contract,
-      l1WalletClient,
-      l1Contracts: {
-        ENS_REGISTRY: l1Contracts.ENS_REGISTRY,
-        PUBLIC_RESOLVER: l1Contracts.PUBLIC_RESOLVER,
-        NAME_WRAPPER: l1Contracts.NAME_WRAPPER,
-        REVERSE_REGISTRAR: l1Contracts.REVERSE_REGISTRAR,
-      },
-      l2WalletClient,
-      l2Contracts: l2Contracts
-        ? {
-            ENS_REGISTRY: l2Contracts.ENS_REGISTRY,
-            PUBLIC_RESOLVER: l2Contracts.PUBLIC_RESOLVER,
-            NAME_WRAPPER: l2Contracts.NAME_WRAPPER,
-            REVERSE_REGISTRAR: l2Contracts.REVERSE_REGISTRAR,
-            L2_REVERSE_REGISTRAR: l2Contracts.L2_REVERSE_REGISTRAR,
-            COIN_TYPE: l2Contracts.COIN_TYPE,
-          }
-        : null,
+      walletClient: l1WalletClient,
+      l2WalletClient: l2WalletClient,
+      chainName,
       opType: "hh-enscribe-nameexisting",
       enableMetrics: true, // Enable metrics logging for plugin usage
     });
@@ -96,9 +56,9 @@ const taskName: NewTaskActionFunction<TaskNameArguments> = async (
     console.log(`\nNaming completed successfully!`);
     console.log(`Contract Type: ${result.contractType}`);
     console.log(`Transactions:`, result.transactions);
+    console.log(`You can check your contract at:`, result.explorerUrl);
   } catch (error) {
     console.error("Error naming contract:", error);
-    throw error;
   }
 };
 
